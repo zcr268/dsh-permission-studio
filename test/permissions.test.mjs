@@ -900,5 +900,13 @@ test('安装命令把长 URL 折行，避免横向截断', () => {
   }
 })
 
+test('README 说明桌面版用界面装，且明确不要填仓库地址', () => {
+  for (const f of ['README.md', 'README.en.md']) {
+    const md = readFileSync(new URL('../' + f, import.meta.url), 'utf8')
+    assert.ok(md.includes('releases/latest/download/dsh-permission-studio.tgz'), f + ' 要给出 tarball 地址')
+    assert.match(md, /不要填仓库地址|Do not paste the repository URL/, f + ' 要提醒别用仓库地址')
+  }
+})
+
 console.log(`\nRESULT: pass=${pass} fail=${fail}`)
 process.exit(fail === 0 ? 0 : 1)

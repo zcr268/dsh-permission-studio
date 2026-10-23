@@ -143,6 +143,20 @@ dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.0.tgz"
 
 装完重启 DSH，设置里出现 **权限档位** 一页。
 
+### 在桌面版里点界面装
+
+DSH 桌面版的 profile 由 Electron 独占，命令行改不了，要用界面装：
+
+**设置 → 插件 → 添加插件**，在「包名或地址」里粘贴：
+
+```
+https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+```
+
+这个地址是打包产物（`.tgz` 结尾），安装器会按 tarball 处理，拿到的就是最新发布版本。
+**不要填仓库地址**（`https://github.com/zcr268/dsh-permission-studio`）——那会按 git 源安装，
+装的是 `main` 分支当前代码，可能包含还没发布的提交。
+
 > 把 `desktop` 换成你的 profile 名。查看有哪些 profile：`dsh profile list`
 
 <br />

@@ -152,6 +152,20 @@ dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.0.tgz"
 
 Restart DSH; a **权限档位** (Permission presets) page appears in Settings.
 
+### Installing from the desktop app UI
+
+The desktop profile is owned exclusively by the Electron app, so the CLI cannot touch it — use the UI:
+
+**Settings → Plugins → Add plugin**, and paste:
+
+```
+https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+```
+
+That URL ends in `.tgz`, so the installer treats it as a tarball and you get the latest published release.
+**Do not paste the repository URL** (`https://github.com/zcr268/dsh-permission-studio`) — that installs
+from git and gives you whatever is on `main`, including unreleased commits.
+
 > Replace `desktop` with your profile name. List profiles with `dsh profile list`.
 
 <br />
