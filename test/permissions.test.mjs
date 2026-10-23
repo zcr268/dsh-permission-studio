@@ -977,6 +977,30 @@ test('cordis.patch.yml 声明的依赖与 inject 对齐', () => {
   assert.match(src, /export const inject = \['webServer', 'configEditor'\]/, 'inject 声明要与注释一致')
 })
 
+test('徽标几何与原生图标一致（回归：只有插件徽标和文字之间有空格）', () => {
+  const src = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.ok(!src.includes('margin-right:6px'), '徽标不能再自带 margin，否则只有它会多一格空白')
+  assert.match(src, /width:14px;height:14px;margin:0/, '徽标尺寸要对齐原生 14px 且零外边距')
+  assert.match(src, /function nativeIconProto\(/, '应能参考同组原生图标的 class')
+  assert.match(src, /wrap\.className = cls/, '有原生图标时沿用它的 class')
+  assert.match(src, /el\.setAttribute\('width', '14'\)/, '内层 svg 也要压到 14px')
+  assert.match(src, /sizeInner\(badge, svg\)/, '换图标时也要重新压尺寸')
+})
+test('徽标几何的依据写在代码里，宿主 CSS 在场时按其核对', () => {
+  const src = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.match(src, /gap:4px/, '注释要写清间距来自宿主容器的 4px gap')
+  assert.match(src, /14px/, '注释要写清原生图标是 14px')
+  // 宿主可能不在本机（CI 上就没有）：在场才核对，避免把本机路径写死进测试
+  const candidates = [
+    '/Applications/DSH Desktop.app/Contents/Resources/app/node_modules/@deepseek-ai/dsh-client-ui-permission-presets/lib/client.js'
+  ]
+  for (const path of candidates) {
+    if (!existsSync(path)) continue
+    const css = readFileSync(path, 'utf8')
+    assert.match(css, /gap:4px/, '宿主下拉间距变了，徽标几何需要同步')
+    assert.match(css, /triggerIcon svg\{width:14px;height:14px\}/, '宿主图标尺寸变了，徽标几何需要同步')
+  }
+})
 test('宿主自带的 peer 必须标 optional（profile 里不会装它们）', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
   const meta = pkg.peerDependenciesMeta || {}

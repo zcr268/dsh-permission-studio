@@ -150,7 +150,7 @@ to a Release, not to whatever is currently on `main` — a branch may hold half-
 
 ```sh
 dsh plugin --profile desktop add \
-  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.3/dsh-permission-studio.tgz
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.4/dsh-permission-studio.tgz
 ```
 
 ### From source (development)
@@ -159,7 +159,7 @@ dsh plugin --profile desktop add \
 git clone https://github.com/zcr268/dsh-permission-studio.git
 cd dsh-permission-studio
 npm pack
-dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.3.tgz"
+dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.4.tgz"
 ```
 
 Restart DSH; a **权限档位** (Permission presets) page appears in Settings.

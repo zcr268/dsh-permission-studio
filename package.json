@@ -1,6 +1,6 @@
 {
   "name": "dsh-permission-studio",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "DSH 权限档位工作室：在 Web 设置里按分类、工具、命令、文件路径四层细配权限，支持多档位、会话内切换、拒绝理由引导与工具剔除。",
   "type": "module",
   "main": "lib/index.js",

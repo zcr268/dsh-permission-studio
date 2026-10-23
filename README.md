@@ -138,7 +138,7 @@ dsh plugin --profile desktop add \
 
 ```sh
 dsh plugin --profile desktop add \
-  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.3/dsh-permission-studio.tgz
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.4/dsh-permission-studio.tgz
 ```
 
 ### 从源码装（开发用）
@@ -147,7 +147,7 @@ dsh plugin --profile desktop add \
 git clone https://github.com/zcr268/dsh-permission-studio.git
 cd dsh-permission-studio
 npm pack
-dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.3.tgz"
+dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.4.tgz"
 ```
 
 装完重启 DSH，设置里出现 **权限档位** 一页。
