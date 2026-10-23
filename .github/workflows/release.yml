@@ -1,0 +1,65 @@
+name: Release
+
+# 每次打 tag（v0.2.0 这种）就自动：
+#   1. 跑测试
+#   2. npm pack 出 tgz
+#   3. 建 GitHub Release 并把 tgz 挂成附件
+#
+# 这样安装命令指向 release 附件，拿到的是「最新发布版本」，
+# 而不是 main 分支上还没发布的提交。
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 跑回归测试
+        run: npm test
+
+      - name: 打包
+        run: npm pack
+
+      - name: 校验包内容
+        run: |
+          TGZ=$(ls dsh-permission-studio-*.tgz)
+          echo "包：$TGZ"
+          tar -tzf "$TGZ" | sort
+          tar -tzf "$TGZ" | grep -q 'package/lib/index.js'
+          tar -tzf "$TGZ" | grep -q 'package/lib/client.js'
+          tar -tzf "$TGZ" | grep -q 'package/cordis.patch.yml'
+
+      # releases/latest/download/<名字> 要求附件名固定，所以额外存一份不带版本号的副本。
+      # 两个附件都上传：固定名给「永远装最新版」用，带版本号的给「锁版本」用。
+      - name: 准备固定文件名的副本
+        run: cp dsh-permission-studio-*.tgz dsh-permission-studio.tgz
+
+      - name: 建 Release 并上传附件
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dsh-permission-studio-*.tgz
+            dsh-permission-studio.tgz
+          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          body: |
+            ## 安装
+
+            ```sh
+            dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+            ```
+
+            这个地址永远指向最新发布版本。想固定版本就用
+            `https://github.com/zcr268/dsh-permission-studio/releases/download/${{ github.ref_name }}/dsh-permission-studio.tgz`

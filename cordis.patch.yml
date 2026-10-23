@@ -1,0 +1,6 @@
+# dsh-permission-studio bundle patch layer —— 把本插件挂载进 profile 树。
+# 依赖宿主侧：@deepseek-ai/dsh-config-editor（写 profile patch）、
+# @deepseek-ai/dsh-host-webserver（HTTP 路由）。两者由 dsh-base 默认提供。
+- insert:
+    - id: dsh-permission-studio
+      name: dsh-permission-studio

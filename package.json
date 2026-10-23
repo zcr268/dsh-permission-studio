@@ -1,0 +1,61 @@
+{
+  "name": "dsh-permission-studio",
+  "version": "0.2.0",
+  "description": "DSH 权限档位工作室：在 Web 设置里按分类、工具、命令、文件路径四层细配权限，支持多档位、会话内切换、拒绝理由引导与工具剔除。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "permission",
+    "sandbox",
+    "approval",
+    "access-control"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/dsh-permission-studio.git"
+  },
+  "homepage": "https://github.com/OWNER/dsh-permission-studio#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/dsh-permission-studio/issues"
+  },
+  "author": "",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node test/permissions.test.mjs",
+    "pack:check": "npm pack --dry-run"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
