@@ -892,5 +892,13 @@ test('README 的测试数量与实际一致', () => {
   assert.match(md, /147/, 'README 里的用例数要更新')
 })
 
+test('安装命令把长 URL 折行，避免横向截断', () => {
+  for (const f of ['README.md', 'README.en.md']) {
+    const md = readFileSync(new URL('../' + f, import.meta.url), 'utf8')
+    const seg = md.slice(md.indexOf('releases/latest'), md.indexOf('releases/latest') + 200)
+    assert.match(md, /dsh plugin --profile desktop add \\\n/, f + ' 的长命令要折行')
+  }
+})
+
 console.log(`\nRESULT: pass=${pass} fail=${fail}`)
 process.exit(fail === 0 ? 0 : 1)

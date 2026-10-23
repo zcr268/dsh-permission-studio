@@ -118,7 +118,8 @@ DSH（DeepSeek Harness）自带 `@deepseek-ai/dsh-permission-presets`，提供�
 ### 装最新发布版（推荐）
 
 ```sh
-dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+dsh plugin --profile desktop add \
+  https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
 ```
 
 这个地址永远指向**最新发布版本**。它拿的是 Release 附件里的打包产物，
@@ -127,7 +128,8 @@ dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio
 ### 锁定某个版本
 
 ```sh
-dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.0/dsh-permission-studio.tgz
+dsh plugin --profile desktop add \
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.0/dsh-permission-studio.tgz
 ```
 
 ### 从源码装（开发用）

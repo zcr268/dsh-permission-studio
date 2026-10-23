@@ -127,7 +127,8 @@ A rule is **path pattern + read action + write action + optional message**.
 ### Latest release (recommended)
 
 ```sh
-dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+dsh plugin --profile desktop add \
+  https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
 ```
 
 This URL always points at the **latest published release**. It resolves to the packaged artifact attached
@@ -136,7 +137,8 @@ to a Release, not to whatever is currently on `main` — a branch may hold half-
 ### Pin a version
 
 ```sh
-dsh plugin --profile desktop add https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.0/dsh-permission-studio.tgz
+dsh plugin --profile desktop add \
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.0/dsh-permission-studio.tgz
 ```
 
 ### From source (development)
