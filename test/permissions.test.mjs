@@ -908,5 +908,26 @@ test('README 说明桌面版用界面装，且明确不要填仓库地址', () =
   }
 })
 
+console.log('== 28. 版本一致性（回归）==')
+test('页面版本号与 package.json 一致', () => {
+  const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const m = src.match(/const VERSION = '([^']+)'/)
+  assert.ok(m, '要有 VERSION 常量')
+  assert.strictEqual(m[1], pkg.version, 'VERSION 必须与 package.json 同步')
+})
+test('版本号显示在设置页标题旁', () => {
+  const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.match(src, /<h1>权限档位<span class="ver">/, '标题要有版本徽标')
+  assert.match(src, /const VERSION=\$\{JSON\.stringify\(VERSION\)\}/, '要注入到页面')
+})
+test('README 与 CHANGELOG 的版本引用同步', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const md = readFileSync(new URL('../README.md', import.meta.url), 'utf8')
+  assert.ok(md.includes('releases/download/v' + pkg.version + '/'), 'README 锁定版本要与 package.json 一致')
+  const cl = readFileSync(new URL('../CHANGELOG.md', import.meta.url), 'utf8')
+  assert.ok(cl.includes('## ' + pkg.version), 'CHANGELOG 要有当前版本条目')
+})
+
 console.log(`\nRESULT: pass=${pass} fail=${fail}`)
 process.exit(fail === 0 ? 0 : 1)
