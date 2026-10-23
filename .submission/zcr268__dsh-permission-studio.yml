@@ -1,0 +1,7 @@
+url: https://github.com/zcr268/dsh-permission-studio
+name: zcr268/dsh-permission-studio
+category: security
+tarball: https://github.com/zcr268/dsh-permission-studio/releases/latest/download/dsh-permission-studio.tgz
+description:
+  en: 'Permission preset editor for DSH Settings: any number of presets, each configuring the sandbox, approval policy, 13 operation categories, per-tool overrides (including removing a tool from the session), regex rules, and per-path file rules with independent read and write decisions. Denials carry an author-written message returned verbatim to the model, resolved at decision time from the rule, the preset fallback, or the category default.'
+  zh: 'DSH 设置里的权限档位编辑器：任意多档位，每档独立配置沙箱、审批策略、13 类操作、逐工具覆盖（含把工具从会话中剔除）、正则规则，以及按路径的文件规则（读写分别判定）。拒绝时可写提示词，原样回给模型；理由在判定时解析，优先级为条目自身、档位兜底、分类默认。'

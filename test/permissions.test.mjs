@@ -13,7 +13,7 @@
  */
 import assert from 'node:assert'
 import { readFileSync, existsSync } from 'node:fs'
-import { decide, toolCategory, normalizePerms, defaultPermsFor, isOutside, CATS, CAT_KEYS, toolDescZh, BUILTIN_PRESETS, evalRules, normalizeRules, PRESET_ICONS, iconSvg, TOOL_MODES, MODES, planHiddenTools, syncHiddenTools, globToRegExp, matchFileRule, normalizeFileAllow, normalizeRel, FILE_ACTIONS } from '../lib/index.js'
+import { decide, toolCategory, normalizePerms, defaultPermsFor, isOutside, CATS, CAT_KEYS, toolDescZh, BUILTIN_PRESETS, evalRules, normalizeRules, PRESET_ICONS, iconSvg, TOOL_MODES, MODES, planHiddenTools, syncHiddenTools, globToRegExp, matchFileRule, normalizeFileAllow, normalizeRel, FILE_ACTIONS, buildStudioPayload, makeBackup, parseBackup, BACKUP_FORMAT, BACKUP_VERSION, renderPage } from '../lib/index.js'
 
 let pass = 0
 let fail = 0
@@ -440,14 +440,17 @@ test('页面注入图标数据且卡头渲染徽标', () => {
   assert.match(src, /iconChip/, '需提供图标选择器')
 })
 test('保存会把 icons 一起提交，否则徽标会丢', () => {
+  const payload = buildStudioPayload({ presets: { a: { icon: 'shield' } } })
+  assert.deepStrictEqual(payload.icons, { a: 'shield' }, '载荷必须带 icons')
   const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
-  assert.match(src, /JSON\.stringify\(\{presets,perms,icons,defaultPreset/, '保存必须带 icons')
+  assert.ok(src.includes('body:JSON.stringify(payload)'), '保存必须提交整理后的完整载荷')
 })
 test('保存也会回传 fallbackReason 与 rules（回归：曾漏传清空）', () => {
-  const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
-  const seg = src.slice(src.indexOf('perms[id].tools=tout'), src.indexOf('perms[id].tools=tout') + 900)
-  assert.match(seg, /fallbackReason/, '需回传兜底理由')
-  assert.match(seg, /rules/, '需回传正则规则')
+  const payload = buildStudioPayload({
+    presets: { a: { perms: { fallbackReason: '统一兜底', rules: [{ pattern: 'rm -rf', mode: 'deny' }] } } }
+  })
+  assert.strictEqual(payload.perms.a.fallbackReason, '统一兜底', '需回传兜底理由')
+  assert.strictEqual(payload.perms.a.rules.length, 1, '需回传正则规则')
 })
 
 
@@ -476,9 +479,11 @@ test('留空理由由兜底接管（判定时）', () => {
 
 
 test('保存不再把分类默认理由当用户理由提交（回归：会覆盖兜底）', () => {
+  const payload = buildStudioPayload({ presets: { a: { perms: { edit: { mode: 'deny' }, read: { mode: 'deny', reason: '  只读  ' } } } } })
+  assert.ok(!('reason' in payload.perms.a.edit), '未填写的拒绝不得自动补默认理由')
+  assert.strictEqual(payload.perms.a.read.reason, '只读', '只提交用户填写（并去空白）的理由')
   const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
   assert.ok(!src.includes("item.reason=cur.reason||cat.defaultReason"), '不能提交默认理由')
-  assert.match(src, /if\(cur\.mode==='deny'&&\(cur\.reason\|\|''\)\.trim\(\)\)item\.reason=cur\.reason\.trim\(\)/, '只提交用户填写的理由')
 })
 
 
@@ -989,6 +994,166 @@ test('README 有兼容性章节且区间与 package.json 一致', () => {
     }
     assert.ok(md.includes('^22.19.0'), f + ' 要写明 node 范围')
   }
+})
+
+/* ---------------------- 备份与恢复（0.2.3） ---------------------- */
+const studioState = () => ({
+  presets: {
+    'custom-1': {
+      sandbox: 'workspace-write',
+      approval: 'ask',
+      name: '只读自查',
+      description: '读代码不写代码',
+      icon: 'shield',
+      perms: {
+        read: { mode: 'allow' },
+        edit: { mode: 'deny', reason: '这个档位不许改文件' },
+        command: { mode: 'deny', reason: '' },
+        doomloop: { mode: 'ask', threshold: 4 },
+        tools: {
+          ls: { mode: 'allow' },
+          grep: { mode: 'hide' },
+          bash: { mode: 'deny', reason: '别跑命令' },
+          read: { mode: 'ask', reason: '询问时不用写理由' }
+        },
+        fallbackReason: '这个档位一律拒绝',
+        fileAllow: {
+          enabled: true,
+          fallback: 'deny',
+          entries: [
+            { pattern: 'src/**', read: 'allow', write: 'deny', reason: '只能看不能改' },
+            { pattern: '  ', read: 'allow' },
+            { pattern: 'docs/**', read: 'bogus', write: 'ask' }
+          ]
+        },
+        rules: [
+          { pattern: 'rm -rf', target: 'command', mode: 'deny', reason: '危险', enabled: true },
+          { pattern: '  ' },
+          { pattern: 'curl', mode: 'allow', enabled: false }
+        ]
+      }
+    }
+  },
+  defaultPreset: 'custom-1'
+})
+
+test('备份：空状态整理出空三件套', () => {
+  const p = buildStudioPayload(undefined)
+  assert.deepStrictEqual(p.presets, {})
+  assert.deepStrictEqual(p.perms, {})
+  assert.deepStrictEqual(p.icons, {})
+})
+
+test('备份：只保留用户填写的拒绝理由（留空不落库）', () => {
+  const p = buildStudioPayload(studioState())
+  assert.strictEqual(p.perms['custom-1'].edit.reason, '这个档位不许改文件')
+  assert.ok(!('reason' in p.perms['custom-1'].command), '空理由不应落库，交给兜底理由解析')
+})
+
+test('备份：工具级 hide 保留，allow 的冗余理由丢弃', () => {
+  const t = buildStudioPayload(studioState()).perms['custom-1'].tools
+  assert.deepStrictEqual(t.grep, { mode: 'hide' })
+  assert.deepStrictEqual(t.bash, { mode: 'deny', reason: '别跑命令' })
+  assert.ok(!('reason' in t.read), 'ask 不需要理由')
+})
+
+test('备份：doomloop 阈值随行，缺省回落到 6', () => {
+  const p = buildStudioPayload(studioState())
+  assert.strictEqual(p.perms['custom-1'].doomloop.threshold, 4)
+  const q = buildStudioPayload({ presets: { a: { perms: { doomloop: { mode: 'ask' } } } } })
+  assert.strictEqual(q.perms.a.doomloop.threshold, 6)
+})
+
+test('备份：兜底理由与正则规则不丢', () => {
+  const p = buildStudioPayload(studioState())
+  assert.strictEqual(p.perms['custom-1'].fallbackReason, '这个档位一律拒绝')
+  assert.strictEqual(p.perms['custom-1'].rules.length, 2, '空 pattern 被丢弃')
+  assert.deepStrictEqual(p.perms['custom-1'].rules[1], { pattern: 'curl', target: 'any', mode: 'allow', enabled: false })
+})
+
+test('备份：文件规则过滤空 pattern、丢弃非法动作、理由仅随拒绝保留', () => {
+  const fa = buildStudioPayload(studioState()).perms['custom-1'].fileAllow
+  assert.strictEqual(fa.enabled, true)
+  assert.strictEqual(fa.fallback, 'deny')
+  assert.strictEqual(fa.entries.length, 2, '空白 pattern 被剔除')
+  assert.deepStrictEqual(fa.entries[0], { pattern: 'src/**', read: 'allow', write: 'deny', reason: '只能看不能改' })
+  assert.deepStrictEqual(fa.entries[1], { pattern: 'docs/**', write: 'ask' }, 'read=bogus 应丢弃')
+})
+
+test('备份：图标跟着档位走', () => {
+  const p = buildStudioPayload(studioState())
+  assert.deepStrictEqual(p.icons, { 'custom-1': 'shield' })
+  assert.strictEqual(p.defaultPreset, 'custom-1')
+})
+
+test('备份：元信息带格式标识与时间戳', () => {
+  const p = buildStudioPayload(studioState())
+  const b = makeBackup(p, Date.UTC(2026, 9, 24, 0, 0, 0))
+  assert.strictEqual(b.format, BACKUP_FORMAT)
+  assert.strictEqual(b.formatVersion, BACKUP_VERSION)
+  assert.strictEqual(b.exportedAt, '2026-10-24T00:00:00.000Z')
+  assert.deepStrictEqual(b.presets, p.presets)
+})
+
+test('备份：导出再导入完全往返', () => {
+  const p = buildStudioPayload(studioState())
+  const text = JSON.stringify(makeBackup(p, 0))
+  const back = parseBackup(text)
+  assert.strictEqual(back.ok, true)
+  assert.deepStrictEqual(back.payload.presets, p.presets)
+  assert.deepStrictEqual(back.payload.perms, p.perms)
+  assert.deepStrictEqual(back.payload.icons, p.icons)
+  assert.strictEqual(back.payload.defaultPreset, 'custom-1')
+})
+
+test('备份导入：非 JSON / 空 / 数组 / 非本插件 / 更高版本 全被拒', () => {
+  assert.strictEqual(parseBackup('').ok, false)
+  assert.match(parseBackup('  ').error, /为空/)
+  assert.match(parseBackup('{oops').error, /不是合法 JSON/)
+  assert.match(parseBackup('[]').error, /必须是一个 JSON 对象/)
+  assert.match(parseBackup(JSON.stringify({ format: 'other', presets: {}, perms: {} })).error, /不是权限工作室的备份/)
+  const future = JSON.stringify({ format: BACKUP_FORMAT, formatVersion: BACKUP_VERSION + 1, presets: { a: {} }, perms: { a: {} } })
+  assert.match(parseBackup(future).error, /更新的版本/)
+})
+
+test('备份导入：缺 presets / 缺 perms / 零档位 全被拒', () => {
+  assert.match(parseBackup(JSON.stringify({ perms: {} })).error, /缺少 presets/)
+  assert.match(parseBackup(JSON.stringify({ presets: { a: {} } })).error, /缺少 perms/)
+  assert.match(parseBackup(JSON.stringify({ presets: {}, perms: {} })).error, /没有任何档位/)
+})
+
+test('备份导入：未知图标丢弃、defaultPreset 非法时回落到首个档位', () => {
+  const text = JSON.stringify({
+    presets: { b: {}, a: {} },
+    perms: { b: {}, a: {} },
+    icons: { b: 'not-an-icon', a: 'shield' },
+    defaultPreset: 'deleted-preset'
+  })
+  const r = parseBackup(text)
+  assert.strictEqual(r.ok, true)
+  assert.deepStrictEqual(r.payload.icons, { a: 'shield' })
+  assert.strictEqual(r.payload.defaultPreset, 'b', '回落到首个档位')
+})
+
+test('备份：管理页注入的整理逻辑与宿主同源（保存与导出不漂移）', () => {
+  const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.ok(src.includes('const buildPayload=${buildStudioPayload.toString()}'), '页面必须注入宿主同一份整理函数')
+  assert.ok(src.includes('const payload=buildPayload(state)'), '保存流程必须复用该函数')
+  assert.ok(!src.includes('const presets={};const perms={};const icons={};'), '保存流程不得再内联一份 payload 构建')
+  assert.ok(src.includes("ROUTE + '/import'"), '必须存在导入路由')
+  assert.ok(src.includes('parseBackup(body && typeof body.backup'), '导入必须走宿主解析')
+})
+
+test('管理页：工具栏出来回三件套按钮，脚本语法可构造', () => {
+  const html = renderPage()
+  for (const id of ['id="add"', 'id="export"', 'id="import"', 'id="importFile"', 'id="save"']) {
+    assert.ok(html.includes(id), '缺少 ' + id)
+  }
+  const script = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'))
+  // 只做语法构造，不执行（页面逻辑依赖 DOM）
+  assert.doesNotThrow(() => new Function(script), '页面脚本必须语法合法')
+  assert.ok(script.includes('function buildStudioPayload(state)'), '注入的整理函数必须可辨识')
+  assert.ok(script.includes("'/permission-studio/import'"), '导入必须打到宿主导入路由')
 })
 
 console.log(`\nRESULT: pass=${pass} fail=${fail}`)

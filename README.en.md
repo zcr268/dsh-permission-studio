@@ -112,6 +112,18 @@ A rule is **path pattern + read action + write action + optional message**.
   and the denial says why
 - Dedicated "enable read" / "enable write" toggles, with warnings when either is missing
 
+### Backup and migration
+
+The page footer has three buttons: **Export backup / Import backup / Save all**.
+
+- Export yields one JSON containing every preset: sandbox, approval, the thirteen rule categories, per-tool
+  overrides, regex rules, file rules, icons and the default preset
+- Export reflects the **current page state**, so you can export unsaved edits too
+- Import replaces the whole preset set; the three built-in presets are always kept, and you get a confirmation
+  prompt first
+- Backups carry `format` and `formatVersion`; unrelated JSON, empty files and backups from a newer version are
+  rejected with an explanation
+
 <br />
 
 <div align="center">
