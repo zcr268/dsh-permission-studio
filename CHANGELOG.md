@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2
+
+- 正确声明兼容版本：补 `peerDependencies`（cordis、客户端 UI 包、react）与 `engines`，
+  并在 `peerDependenciesMeta` 标为 optional（宿主自带，profile 里不重复安装）
+- README 中英双语新增「兼容性」章节，写明支持区间与实测宿主版本
+- 新增兼容声明回归测试：inject 与 require 到的每个包都必须有 peer 声明
+
+
 ## 0.2.1
 
 - 设置页标题右侧显示插件版本号，方便确认在线更新是否生效

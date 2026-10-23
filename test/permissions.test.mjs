@@ -929,5 +929,67 @@ test('README 与 CHANGELOG 的版本引用同步', () => {
   assert.ok(cl.includes('## ' + pkg.version), 'CHANGELOG 要有当前版本条目')
 })
 
+console.log('== 29. 兼容版本声明（回归）==')
+test('声明 DSH 客户端包与 cordis 的兼容区间', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const peers = pkg.peerDependencies || {}
+  assert.ok(peers['@deepseek-ai/cordis'], '要声明 cordis 兼容范围')
+  assert.match(peers['@deepseek-ai/cordis'], /^>=4\./, 'cordis 4.x')
+  for (const name of ['@deepseek-ai/dsh-client-ui-renderer', '@deepseek-ai/dsh-client-ui-settings']) {
+    assert.ok(peers[name], '要声明 ' + name + ' 兼容范围')
+    for (const v of ['0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.1', '0.2.1-rc.2']) {
+      assert.ok(peers[name].includes(v), name + ' 要覆盖 ' + v)
+    }
+  }
+})
+test('客户端 inject 的每个包都在 peerDependencies 里声明了', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const peers = pkg.peerDependencies || {}
+  for (const dep of pkg.dsh.client.inject) {
+    assert.ok(peers[dep], 'dsh.client.inject 里的 ' + dep + ' 必须在 peerDependencies 声明兼容版本')
+  }
+})
+test('客户端实际 require 的包也有声明', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const peers = pkg.peerDependencies || {}
+  const src = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  const required = [...src.matchAll(/require\('([^']+)'\)/g)].map((m) => m[1])
+  assert.ok(required.length > 0, '应能解析出 require')
+  for (const dep of required) {
+    assert.ok(peers[dep], 'client.js require 的 ' + dep + ' 要声明兼容版本')
+  }
+})
+test('engines 与 DSH 要求的 node 范围一致', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.match(pkg.engines.node, /22\.19/, '要覆盖 DSH 要求的 22.19')
+  assert.match(pkg.engines.node, />=24/, '要覆盖 node 24+')
+})
+test('cordis.patch.yml 声明的依赖与 inject 对齐', () => {
+  const yml = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  assert.match(yml, /dsh-config-editor/, 'patch 注释要说明依赖 config-editor')
+  assert.match(yml, /dsh-host-webserver/, 'patch 注释要说明依赖 host-webserver')
+  const src = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.match(src, /export const inject = \['webServer', 'configEditor'\]/, 'inject 声明要与注释一致')
+})
+
+test('宿主自带的 peer 必须标 optional（profile 里不会装它们）', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const meta = pkg.peerDependenciesMeta || {}
+  for (const name of Object.keys(pkg.peerDependencies || {})) {
+    assert.ok(meta[name] && meta[name].optional === true, name + ' 必须标 optional，否则安装时报缺 peer')
+  }
+})
+test('README 有兼容性章节且区间与 package.json 一致', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  for (const f of ['README.md', 'README.en.md']) {
+    const md = readFileSync(new URL('../' + f, import.meta.url), 'utf8')
+    assert.match(md, /## (兼容性|Compatibility)/, f + ' 要有兼容章节')
+    for (const v of ['0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.1', '0.2.1-rc.2']) {
+      assert.ok(md.includes(v), f + ' 要写明支持 ' + v)
+    }
+    assert.ok(md.includes('^22.19.0'), f + ' 要写明 node 范围')
+  }
+})
+
 console.log(`\nRESULT: pass=${pass} fail=${fail}`)
 process.exit(fail === 0 ? 0 : 1)

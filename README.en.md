@@ -138,7 +138,7 @@ to a Release, not to whatever is currently on `main` — a branch may hold half-
 
 ```sh
 dsh plugin --profile desktop add \
-  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.1/dsh-permission-studio.tgz
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.2/dsh-permission-studio.tgz
 ```
 
 ### From source (development)
@@ -147,7 +147,7 @@ dsh plugin --profile desktop add \
 git clone https://github.com/zcr268/dsh-permission-studio.git
 cd dsh-permission-studio
 npm pack
-dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.1.tgz"
+dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.2.tgz"
 ```
 
 Restart DSH; a **权限档位** (Permission presets) page appears in Settings.
@@ -269,6 +269,28 @@ Every bug that was fixed left a regression case behind — including a few non-o
 - Treating "rules exist" as a precondition makes the fallback silently inert when the list is empty
 
 <br />
+
+## Compatibility
+
+Declared support (via `peerDependencies`):
+
+| Package | Supported range |
+|---|---|
+| `@deepseek-ai/cordis` | `>=4.0.2 <5.0.0` |
+| `@deepseek-ai/dsh-client-ui-renderer` | `0.2.0-rc.1` · `0.2.0-rc.2` · `0.2.1-rc.1` · `0.2.1-rc.2` |
+| `@deepseek-ai/dsh-client-ui-settings` | same |
+| `react` / `react-dom` | `^18.2.0` |
+| Node.js | `^22.19.0` or `>=24.0.0` |
+
+Host-provided packages (cordis and the client UI packages) are not reinstalled into the profile,
+so those peers are marked `optional` — no missing-peer warnings on install, while the range
+stays an explicit promise.
+
+Verified: installed and started on a clean `0.2.1-rc.2` host; service self-check reports
+`permissionPresets=yes tools=yes sessions=yes`, and both the Settings page and the API respond.
+
+> Declared compatibility is not a claim that every listed version was freshly tested.
+> The table is the support range; the actually verified host is noted under "Verified".
 
 ## Known limits
 

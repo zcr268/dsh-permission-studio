@@ -129,7 +129,7 @@ dsh plugin --profile desktop add \
 
 ```sh
 dsh plugin --profile desktop add \
-  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.1/dsh-permission-studio.tgz
+  https://github.com/zcr268/dsh-permission-studio/releases/download/v0.2.2/dsh-permission-studio.tgz
 ```
 
 ### 从源码装（开发用）
@@ -138,7 +138,7 @@ dsh plugin --profile desktop add \
 git clone https://github.com/zcr268/dsh-permission-studio.git
 cd dsh-permission-studio
 npm pack
-dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.1.tgz"
+dsh plugin --profile desktop add "$(pwd)/dsh-permission-studio-0.2.2.tgz"
 ```
 
 装完重启 DSH，设置里出现 **权限档位** 一页。
@@ -259,6 +259,26 @@ npm pack          # 打包
 - 文件规则若把「有规则才生效」写成前提，空列表时兜底等于失效
 
 <br />
+
+## 兼容性
+
+本插件声明对以下 DSH 宿主版本的兼容（`peerDependencies`）：
+
+| 包 | 兼容区间 |
+|---|---|
+| `@deepseek-ai/cordis` | `>=4.0.2 <5.0.0` |
+| `@deepseek-ai/dsh-client-ui-renderer` | `0.2.0-rc.1` · `0.2.0-rc.2` · `0.2.1-rc.1` · `0.2.1-rc.2` |
+| `@deepseek-ai/dsh-client-ui-settings` | 同上 |
+| `react` / `react-dom` | `^18.2.0` |
+| Node.js | `^22.19.0` 或 `>=24.0.0` |
+
+宿主自带的包（cordis、客户端 UI 包）在 profile 里不会被重复安装，
+因此这些 peer 声明标为 `optional`——安装时不会报缺失警告，但版本区间仍是明确承诺。
+
+已验证：在干净的 `0.2.1-rc.2` 宿主上安装并启动，服务自检
+`permissionPresets=yes tools=yes sessions=yes`，设置页与接口均正常。
+
+> 声明兼容不等于每个版本都做过完整实测。上表是支持范围，实际验证过的宿主版本见上方「已验证」。
 
 ## 已知边界
 
